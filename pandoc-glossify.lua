@@ -1395,6 +1395,12 @@ function process_gloss_block(block)
   return out
 end
 
+-- version check
+if PANDOC_VERSION < pandoc.types.Version("2.19.0") then 
+   io.stderr:write("! pandoc-glossify requires pandoc version 2.19.0 or later\n")
+   io.stderr:write("! aborting...\n")
+   os.exit(1) 
+end
 
 return {
   { Meta = setup_metadata_copy },
