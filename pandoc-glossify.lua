@@ -504,6 +504,19 @@ end
 do
   -- we maintain a list of extra citations to be added from the paragraphs
   local nocite_list = List:new {}
+  local metadata_copy = nil
+
+  function setup_metadata_copy(meta)  
+    -- clone the metadata for the local citeproc application
+    local meta_clone = {}
+    for k, v in pairs(meta) do 
+      meta_clone[k] = v
+    end
+
+    metadata_copy = pandoc.Meta(meta_clone)
+    metadata_copy["suppress-bibliography"] = pandoc.MetaBool(true)
+  end  
+
 
   function parse_markdown_inlines(text)
     assert(pandoc.utils.type(text) == "List")
@@ -512,7 +525,7 @@ do
     local doc = pandoc.read(("\n"):join(text), "markdown", PANDOC_READER_OPTIONS)
 
     -- collect the citations to add them to the nocite list
-    local any_citaions = false
+    local any_citations = false
     doc:walk({Cite = function(elt) 
       nocite_list:insert(elt) 
       any_citations = true
@@ -520,7 +533,7 @@ do
   
     -- run citeproc on the document (suppressing bibliography generation)
     if any_citations then 
-      doc.meta["suppress-bibliography"] = pandoc.MetaBool(true)
+      doc.meta = metadata_copy
       doc = pandoc.utils.citeproc(doc)
     end
 
@@ -1382,7 +1395,9 @@ function process_gloss_block(block)
   return out
 end
 
+
 return {
+  { Meta = setup_metadata_copy },
   { traverse = "topdown", CodeBlock = process_gloss_block, Cite = process_gloss_relative_references },
   { Meta = add_internal_citations, Cite = process_gloss_references}  
 }
